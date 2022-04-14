@@ -115,7 +115,7 @@ def check_wrks(update, context):
     chat = update.effective_chat
     context.bot.send_message(chat.id, 'Проверяем новые статусы за сутки...')
     try:
-        response = get_api_answer(int(time.time())-86400)
+        response = get_api_answer(int(time.time()) - 86400)
         home_wrks = check_response(response)
         if len(home_wrks) == 0:
             context.bot.send_message(chat.id, 'Обновленных статусов нет')
