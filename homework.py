@@ -111,14 +111,14 @@ def check_tokens():
 
 
 def check_wrks(update, context):
-    """Ручная проверка статуса работ по команде check."""
+    """Ручная проверка статуса работ за сутки по команде check."""
     chat = update.effective_chat
-    context.bot.send_message(chat.id, 'Проверяем новые статусы...')
+    context.bot.send_message(chat.id, 'Проверяем новые статусы за сутки...')
     try:
-        response = get_api_answer(int(time.time()))
+        response = get_api_answer(int(time.time())-86400)
         home_wrks = check_response(response)
         if len(home_wrks) == 0:
-            context.bot.send_message(chat.id, 'Обновленых статусов нет')
+            context.bot.send_message(chat.id, 'Обновленных статусов нет')
         else:
             for wrk in home_wrks:
                 wrk_status = parse_status(wrk)
