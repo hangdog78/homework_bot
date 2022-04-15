@@ -20,6 +20,8 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('CHAT_ID')
 
 RETRY_TIME = 600
+DAY_IN_SEC = 86400
+
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -115,7 +117,7 @@ def check_wrks(update, context):
     chat = update.effective_chat
     context.bot.send_message(chat.id, 'Проверяем новые статусы за сутки...')
     try:
-        response = get_api_answer(int(time.time()) - 86400)
+        response = get_api_answer(int(time.time()) - DAY_IN_SEC)
         home_wrks = check_response(response)
         if len(home_wrks) == 0:
             context.bot.send_message(chat.id, 'Обновленных статусов нет')
@@ -161,7 +163,7 @@ def main():
             logger.error(message)
             if error not in sent_errors:
                 sent_errors.append(error)
-                send_message(bot, error)
+                send_message(bot, message)
             time.sleep(RETRY_TIME)
 
 
