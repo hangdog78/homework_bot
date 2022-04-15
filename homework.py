@@ -114,6 +114,7 @@ def check_tokens():
 
 def check_wrks(update, context):
     """Ручная проверка статуса работ за сутки по команде check."""
+    logger.info('/check command recieved.')
     chat = update.effective_chat
     context.bot.send_message(chat.id, 'Проверяем новые статусы за сутки...')
     try:
@@ -127,44 +128,47 @@ def check_wrks(update, context):
                 context.bot.send_message(chat.id, wrk_status)
 
     except Exception as error:
-        message = f'Сбой в работе программы: {error}'
+        message = f'Service failed: {error}'
         logger.error(message)
 
 
 def main():
     """Основная логика работы бота."""
     if check_tokens() is False:
-        logger.critical('Не обнаружены токены. Сервис остановлен.')
+        logger.critical('Tokens were not found. Service stopped.')
         return
     else:
-        logger.info('Токены загружены')
+        logger.info('Tokens are loaded.')
 
-    updater = Updater(token=TELEGRAM_TOKEN)
-    updater.dispatcher.add_handler(CommandHandler('check', check_wrks))
-    updater.start_polling()
+    try:
+        updater = Updater(token=TELEGRAM_TOKEN)
+        updater.dispatcher.add_handler(CommandHandler('check', check_wrks))
+        updater.start_polling()
+        bot = Bot(token=TELEGRAM_TOKEN)
+    except Exception as error:
+        logger.error(f'Network connection failed: {error}')
 
-    bot = Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time())
-    sent_errors = []
+    else:
+        current_timestamp = int(time.time())
+        sent_errors = []
+        logger.info('Starting service.')
+        while True:
+            try:
+                response = get_api_answer(current_timestamp)
+                home_wrks = check_response(response)
+                for wrk in home_wrks:
+                    wrk_status = parse_status(wrk)
+                    send_message(bot, wrk_status)
+                    current_timestamp = response.get('current_date')
+                    time.sleep(RETRY_TIME)
 
-    while True:
-        try:
-            response = get_api_answer(current_timestamp)
-            home_wrks = check_response(response)
-            for wrk in home_wrks:
-                wrk_status = parse_status(wrk)
-                send_message(bot, wrk_status)
-
-            current_timestamp = response.get('current_date')
-            time.sleep(RETRY_TIME)
-
-        except Exception as error:
-            message = f'Сбой в работе программы: {error}'
-            logger.error(message)
-            if error not in sent_errors:
-                sent_errors.append(error)
-                send_message(bot, message)
-            time.sleep(RETRY_TIME)
+            except Exception as error:
+                message = f'Service failed: {error}'
+                logger.error(message)
+                if error not in sent_errors:
+                    sent_errors.append(error)
+                    send_message(bot, message)
+                    time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
